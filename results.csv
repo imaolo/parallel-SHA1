@@ -1,0 +1,23 @@
+Parallel SHA1 Metric Data
+Min Message Size(GB): 0.000200
+Max Message Size(GB): 0.003000
+Min Threads         : 1
+Max Threads         : 2
+Granularity         : 3
+Tests per Cycle     : 1
+
+Threads: 1
+Message Size(GB), Parallel Time, Serial Time, Serial Speedup
+0.000200,            0.0052,        0.0003,    19.36
+0.001133,            0.0221,        0.0014,    15.90
+0.002067,            0.0243,        0.0026,    9.31
+0.003000,            0.0505,        0.0067,    7.55
+
+Threads: 2
+Message Size(GB), Parallel Time, Serial Time, Serial Speedup
+0.000200,            0.0016,        0.0003,    5.87
+0.001133,            0.0316,        0.0014,    22.67
+0.002067,            0.0222,        0.0026,    8.51
+0.003000,            0.0527,        0.0067,    7.88
+
+PASSED
