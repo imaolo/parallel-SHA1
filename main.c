@@ -3,8 +3,8 @@
 // to my parallel OpenMP implementation
 
 // Arguments:
-// 1. Min message size(GB)
-// 2. Max message size(GB)
+// 1. Min message size(MB)
+// 2. Max message size(MB)
 // 3. Min threads
 // 4. Max threads
 // 5. Granularity
@@ -34,8 +34,8 @@ int main(int argc, char **argv){
     //checking that the proper arguments were used 
     if (!checkArguments(argc,argv))
         return 0;
-    const size_t MIN_MESSAGE_SIZE = atof(argv[1]) * pow(10,9);
-    const size_t MAX_MESSAGE_SIZE = atof(argv[2]) * pow(10,9);
+    const size_t MIN_MESSAGE_SIZE = atof(argv[1]) * pow(10,6);
+    const size_t MAX_MESSAGE_SIZE = atof(argv[2]) * pow(10,6);
     const size_t MIN_THREADS      = atoi(argv[3]);
     const size_t MAX_THREADS      = atoi(argv[4]);
     const size_t GRANULARITY      = atoi(argv[5]);
@@ -53,8 +53,8 @@ int main(int argc, char **argv){
     FILE *of;
     of = fopen(FILE_NAME,"w");
     fprintf(of,"Parallel SHA1 Metric Data\n");
-    fprintf(of,"Min Message Size(GB): %0.6f\n",MIN_MESSAGE_SIZE/pow(10,9));
-    fprintf(of,"Max Message Size(GB): %0.6f\n",MAX_MESSAGE_SIZE/pow(10,9));
+    fprintf(of,"Min Message Size(GB): %0.6f\n",MIN_MESSAGE_SIZE/pow(10,6));
+    fprintf(of,"Max Message Size(GB): %0.6f\n",MAX_MESSAGE_SIZE/pow(10,6));
     fprintf(of,"Min Threads         : %ld\n",MIN_THREADS);
     fprintf(of,"Max Threads         : %ld\n",MAX_THREADS);
     fprintf(of,"Granularity         : %ld\n",GRANULARITY);
@@ -62,12 +62,11 @@ int main(int argc, char **argv){
     fclose(of);
 
     printf("running...\n");
-    int i;
-    int j;
     size_t size = MIN_MESSAGE_SIZE;
+    size_t cycles  = MIN_MESSAGE_SIZE == MAX_MESSAGE_SIZE ? 0  : GRANULARITY;
     //collect industry implementation data
-    for (i = 0;i<=GRANULARITY;i++){
-        for (j = 0;j<NUMBER_OF_TESTS;j++){
+    for (int i = 0;i<=cycles;i++){
+        for (int j = 0;j<NUMBER_OF_TESTS;j++){
             start = omp_get_wtime();
             SHA1(message,size,serialResult);
             serialTime[i] += omp_get_wtime()-start;
@@ -81,11 +80,11 @@ int main(int argc, char **argv){
         fprintf(of,"Threads: %d\n",threads);
         fprintf(of,"Message Size(GB), Parallel Time, Serial Time, Serial Speedup\n");
         fclose(of);
-        for (i = 0;i<=GRANULARITY;i++){
+        for (int i = 0;i<=cycles;i++){
             of = fopen(FILE_NAME,"a");
             fprintf(of,"%0.6f,",(float)size/pow(10,9));
             fclose(of);
-            for (j = 0;j<NUMBER_OF_TESTS;j++){
+            for (int j = 0;j<NUMBER_OF_TESTS;j++){
                 start = omp_get_wtime();
                 SHA1P(message,size,parallelResult,threads);
                 parallelTime[i] += omp_get_wtime()-start;
@@ -149,7 +148,7 @@ int checkArguments(int argc, char **argv){
         printArguments();
         return 0;
     }
-    else if (atof(argv[1]) >= atof(argv[2])){
+    else if (atof(argv[1]) > atof(argv[2])){
         printf("Ensure the min message size is less than the max message size.\n");
         printArguments();
         return 0 ; 
@@ -238,6 +237,7 @@ void SHA1P(unsigned char *message,uint64_t l, unsigned char * result,BYTE thread
     WORD state[5] = {H0,H1,H2,H3,H4};
     BYTE *z;            //a temporary pointer used within the loops
 
+
     #pragma omp parallel for          \
         num_threads(threads)          \
         shared (height,blocks,padded) \
@@ -262,12 +262,12 @@ void SHA1P(unsigned char *message,uint64_t l, unsigned char * result,BYTE thread
                  1);
         }
     }
-    
 
-    #pragma omp parallel for ordered  \
-        num_threads(threads)          \
-        shared (height,blocks,state,width) \
-        private(row,a,b,c,d,e,q,temp) 
+
+    // #pragma omp parallel for ordered  \
+    //     num_threads(threads)          \
+    //     shared (height,blocks,state,width) \
+    //     private(row,a,b,c,d,e,q,temp) 
     for(row=0;row<height;row++){
         #pragma omp ordered
         a = state[0];
